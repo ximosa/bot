@@ -72,15 +72,18 @@ module.exports = async (req, res) => {
                 `📏 Tamaño: ${Math.round(documento.file_size/1024/1024)}MB`
             );
         }
-        
         // Cuando se busca un archivo
         if (body.message && body.message.text && !body.message.text.startsWith('/')) {
             const chatId = body.message.chat.id;
             const busqueda = body.message.text.toLowerCase();
             
+            console.log('Búsqueda:', busqueda);
+            
             const archivos = await Archivo.find({
                 nombre: { $regex: busqueda, $options: 'i' }
             });
+            
+            console.log('Archivos encontrados:', archivos);
             
             if (archivos.length > 0) {
                 for (const archivo of archivos) {
@@ -95,7 +98,6 @@ module.exports = async (req, res) => {
                 );
             }
         }
-        
         if (body.callback_query) {
             const chatId = body.callback_query.message.chat.id;
             const data = body.callback_query.data;
