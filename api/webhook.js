@@ -1,8 +1,24 @@
 const TelegramBot = require('node-telegram-bot-api');
+const mongoose = require('mongoose');
 const moment = require('moment');
 require('moment/locale/es');
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN);
+
+// Modelo de Archivo
+const Archivo = mongoose.model('Archivo', new mongoose.Schema({
+    fileId: String,
+    nombre: String,
+    tipo: String,
+    tamaño: Number,
+    fechaSubida: { type: Date, default: Date.now }
+}));
+
+// Conectar a MongoDB
+mongoose.connect(process.env.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+});
 
 const menuPrincipal = {
     reply_markup: {
@@ -36,6 +52,48 @@ module.exports = async (req, res) => {
                 "🚀 Bienvenido al Catálogo WordPress\nSelecciona una opción:",
                 menuPrincipal
             );
+        }
+        
+        // Cuando se sube un archivo
+        if (body.message && body.message.document) {
+            const chatId = body.message.chat.id;
+            const documento = body.message.document;
+            
+            const nuevoArchivo = await Archivo.create({
+                fileId: documento.file_id,
+                nombre: documento.file_name.toLowerCase(),
+                tipo: documento.mime_type,
+                tamaño: documento.file_size
+            });
+            
+            await bot.sendMessage(chatId, 
+                `✅ Archivo guardado exitosamente:\n` +
+                `📁 Nombre: ${documento.file_name}\n` +
+                `📏 Tamaño: ${Math.round(documento.file_size/1024/1024)}MB`
+            );
+        }
+        
+        // Cuando se busca un archivo
+        if (body.message && body.message.text && !body.message.text.startsWith('/')) {
+            const chatId = body.message.chat.id;
+            const busqueda = body.message.text.toLowerCase();
+            
+            const archivos = await Archivo.find({
+                nombre: { $regex: busqueda, $options: 'i' }
+            });
+            
+            if (archivos.length > 0) {
+                for (const archivo of archivos) {
+                    await bot.sendDocument(chatId, archivo.fileId, {
+                        caption: `📦 ${archivo.nombre}\n` +
+                                `📏 ${Math.round(archivo.tamaño/1024/1024)}MB`
+                    });
+                }
+            } else {
+                await bot.sendMessage(chatId, 
+                    '🔍 No se encontraron archivos. Intenta con otro nombre.'
+                );
+            }
         }
         
         if (body.callback_query) {
