@@ -2,19 +2,20 @@ const TelegramBot = require('node-telegram-bot-api');
 const moment = require('moment');
 require('moment/locale/es');
 
-const TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const url = process.env.VERCEL_URL;
+const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN);
 
-const bot = new TelegramBot(TOKEN);
-bot.setWebHook(`${url}/api/webhook`);
+module.exports = async (req, res) => {
+    // Validación básica
+    if (req.method !== 'POST') {
+        return res.status(200).json({ ok: true });
+    }
 
-module.exports = async (request, response) => {
     try {
-        const { body } = request;
+        const { body } = req;
+        
         if (body.message) {
-            const { message } = body;
-            const chatId = message.chat.id;
-            const text = message.text;
+            const chatId = body.message.chat.id;
+            const text = body.message.text;
 
             switch (text) {
                 case '/start':
@@ -67,6 +68,10 @@ module.exports = async (request, response) => {
                         { parse_mode: 'HTML' }
                     );
                     break;
+
+                default:
+                    await bot.sendMessage(chatId, 'Mensaje recibido');
+                    break;
             }
         }
 
@@ -86,9 +91,10 @@ module.exports = async (request, response) => {
                 '✅ Mensaje recibido. Pronto te responderemos.'
             );
         }
-        return response.status(200).send('OK');
+
+        return res.status(200).json({ ok: true });
     } catch (error) {
         console.error('Error en webhook:', error);
-        return response.status(500).send('Error interno del servidor');
+        return res.status(200).json({ ok: true });
     }
 };
