@@ -11,7 +11,6 @@ bot.setWebHook(`${url}/api/webhook`);
 module.exports = async (request, response) => {
     try {
         const { body } = request;
-        
         if (body.message) {
             const { message } = body;
             const chatId = message.chat.id;
@@ -71,6 +70,22 @@ module.exports = async (request, response) => {
             }
         }
 
+        if (body.message && body.message.text && !body.message.text.startsWith('/')) {
+            const ADMIN_ID = "7023016272"; // Reemplaza con tu ID
+            const msg = body.message;
+            
+            // Enviar mensaje al admin
+            await bot.sendMessage(ADMIN_ID, 
+                `📩 Nuevo mensaje de usuario:\n` +
+                `De: @${msg.from.username || 'Sin username'}\n` +
+                `Mensaje: ${msg.text}`
+            );
+
+            // Confirmar al usuario
+            await bot.sendMessage(msg.chat.id, 
+                '✅ Mensaje recibido. Pronto te responderemos.'
+            );
+        }
         return response.status(200).send('OK');
     } catch (error) {
         console.error('Error en webhook:', error);
