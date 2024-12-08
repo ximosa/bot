@@ -59,6 +59,8 @@ module.exports = async (req, res) => {
             const chatId = body.message.chat.id;
             const documento = body.message.document;
             
+            console.log('Documento recibido:', documento);
+            
             const nuevoArchivo = await Archivo.create({
                 fileId: documento.file_id,
                 nombre: documento.file_name.toLowerCase(),
@@ -66,11 +68,7 @@ module.exports = async (req, res) => {
                 tamaño: documento.file_size
             });
             
-            await bot.sendMessage(chatId, 
-                `✅ Archivo guardado exitosamente:\n` +
-                `📁 Nombre: ${documento.file_name}\n` +
-                `📏 Tamaño: ${Math.round(documento.file_size/1024/1024)}MB`
-            );
+            console.log('Archivo guardado en DB:', nuevoArchivo);
         }
         // Cuando se busca un archivo
         if (body.message && body.message.text && !body.message.text.startsWith('/')) {
